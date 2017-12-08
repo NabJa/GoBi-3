@@ -4,12 +4,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.HashMap;
+
+import augmentedTree.IntervalTree;
 import genomicUtils.*;
 
 public class GTFReader {
 
-	HashMap<String, Gene> genes = new HashMap<String, Gene>();
-
+	HashMap<String, Gene> genes = new HashMap<String, Gene>();	
+	
 	public HashMap<String, Gene> getGenes(){
 		return genes;
 	}
@@ -30,22 +32,16 @@ public class GTFReader {
 
 					int firstTab = rline.indexOf('\t');
 					int secondTab = rline.indexOf('\t', firstTab + 1);
-					
-					int thirdTab = rline.indexOf('\t', secondTab + 1);
-					int fourthTab = rline.indexOf('\t', thirdTab + 1);
-					int fifthTab = rline.indexOf('\t', fourthTab + 1);
-					int sixthTab = rline.indexOf('\t', fifthTab + 1);
-					int seventhTab = rline.indexOf('\t', sixthTab + 1);
 
 					if (rline.substring(secondTab + 1, secondTab + 5).toLowerCase().equals("exon")) {
 											
-						String chr = rline.substring(0, firstTab);
-						String bioType = rline.substring(firstTab + 1, secondTab);
-						int start = Integer.parseInt(rline.substring(thirdTab + 1, fourthTab));
-						int end = Integer.parseInt(rline.substring(fourthTab + 1, fifthTab));
-						String strand = rline.substring(sixthTab + 1, seventhTab);
-						
-						String[] line = rline.split(";");
+						String[] line = rline.split("(\t)|(;)");
+
+						String chr = line[0];
+						int start = Integer.parseInt(line[3]);
+						int end = Integer.parseInt(line[4]);
+						String strand = line[6];
+						String bioType = line[2];
 						
 						String transID = transcriptIDSearch(line);
 						String geneID = geneIDSearch(line);
@@ -58,8 +54,7 @@ public class GTFReader {
 
 						Region cds = new Region(start, end, proteinID, bioType);
 						RegionVector transcript = new RegionVector(transID);
-						
-						
+												
 //						System.out.println(chr + "\t" + bioType + "\t" + start  + "\t" + end  + "\t" + strand  + "\t" + transID  + "\t" + geneID + "\t" + proteinID);
 						
 						if (newGene == null) // means this gene is new
@@ -69,6 +64,7 @@ public class GTFReader {
 
 						} else // gene already exists
 						{
+							genes.get(geneID).updatePos(start, end);
 							Gene correspondingGene = genes.get(geneID);
 							RegionVector newTrans = correspondingGene.transcripts.putIfAbsent(transID, transcript);
 
